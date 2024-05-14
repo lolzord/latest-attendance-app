@@ -1,3 +1,10 @@
-Flask==2.2.2
 gunicorn
 Werkzeug==2.2.2
+Flask-Login
+pytz
+pyodbc
+Flask-SQLAlchemy==2.5.1
+python-dotenv==0.19.2
+Flask-Migrate==3.1.0
+Flask==2.1.1
+SQLAlchemy==1.4.41
