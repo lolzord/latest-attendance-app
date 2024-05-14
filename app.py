@@ -1,42 +1,9 @@
-# import os
-
-# from flask import (Flask, redirect, render_template, request,
-#                    send_from_directory, url_for)
-
-# app = Flask(__name__)
-
-
-# @app.route('/')
-# def index():
-#    print('Request for index page received')
-#    return render_template('index.html')
-
-# @app.route('/favicon.ico')
-# def favicon():
-#     return send_from_directory(os.path.join(app.root_path, 'static'),
-#                                'favicon.ico', mimetype='image/vnd.microsoft.icon')
-
-# @app.route('/hello', methods=['POST'])
-# def hello():
-#    name = request.form.get('name')
-
-#    if name:
-#        print('Request for hello page received with name=%s' % name)
-#        return render_template('hello.html', name = name)
-#    else:
-#        print('Request for hello page received with no name or blank name -- redirecting')
-#        return redirect(url_for('index'))
-
-
-# if __name__ == '__main__':
-#    app.run()
-
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, UserMixin, login_required, logout_user
+from flask_login import LoginManager, UserMixin, login_required, logout_user, login_user
 import pytz
 from dotenv import load_dotenv
 from flask_migrate import Migrate
@@ -50,8 +17,7 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
-migrate = Migrate(app, db)  # Initialize Flask-Migrate
-
+migrate = Migrate(app, db)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
@@ -61,15 +27,32 @@ malaysia_time = datetime.now(malaysia_tz)
 
 selected_email = None
 
-# Define your models
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(150), unique=True, nullable=False)
-    password = db.Column(db.String(150), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+    is_admin = db.Column(db.Boolean, default=False)
 
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
+class Employee(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    card_id = db.Column(db.String(120), unique=True, nullable=True)
+
+class Attendance(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employee.id'), nullable=False)
+    in_time = db.Column(db.DateTime, nullable=False)
+    out_time = db.Column(db.DateTime, nullable=True)
+    working_hours = db.Column(db.Float, nullable=True)
+    subject = db.Column(db.String(120), nullable=True)
+    employee = db.relationship('Employee', backref=db.backref('attendances', lazy=True))
+
+class Timetable(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    start_time = db.Column(db.Time, nullable=False)
+    end_time = db.Column(db.Time, nullable=False)
+    subject = db.Column(db.String(120), nullable=False)
 
 @app.route('/')
 def index():
@@ -80,6 +63,10 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
 @app.route('/capture_card')
 def capture_card():
     global selected_email
@@ -88,8 +75,12 @@ def capture_card():
         return jsonify({'error': 'No card ID or email provided'}), 400
 
     try:
-        db.engine.execute("UPDATE employees SET card_id = %s WHERE email = %s", card_id, selected_email)
-        return redirect('/dashboard')
+        employee = Employee.query.filter_by(email=selected_email).first()
+        if employee:
+            employee.card_id = card_id
+            db.session.commit()
+            return redirect('/dashboard')
+        return jsonify({'error': 'Employee not found'}), 404
     except Exception as e:
         return jsonify({'error': 'Database update failed', 'message': str(e)}), 500
 
@@ -100,13 +91,17 @@ def select_user():
         card_id = request.form.get('card_id')
 
         try:
-            db.engine.execute("UPDATE employees SET card_id = %s WHERE email = %s", card_id, email)
-            return redirect(url_for('dashboard'))
+            employee = Employee.query.filter_by(email=email).first()
+            if employee:
+                employee.card_id = card_id
+                db.session.commit()
+                return redirect(url_for('dashboard'))
+            return jsonify({'error': 'Employee not found'}), 404
         except Exception as e:
             return jsonify({'error': 'Database update failed', 'message': str(e)}), 500
     else:
-        cursor = db.engine.execute("SELECT email FROM employees")
-        emails = [row['email'] for row in cursor.fetchall()]
+        employees = Employee.query.with_entities(Employee.email).all()
+        emails = [employee.email for employee in employees]
         return render_template('select_user.html', emails=emails)
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -115,12 +110,12 @@ def login():
         email = request.form.get('email')
         password = request.form.get('password')
 
-        cursor = db.engine.execute("SELECT * FROM employees WHERE email = %s", email)
-        user = cursor.fetchone()
+        user = User.query.filter_by(email=email).first()
 
-        if user and check_password_hash(user['password'], password):
+        if user and check_password_hash(user.password, password):
+            login_user(user)
             session['logged_in'] = True
-            session['is_admin'] = user['is_admin']
+            session['is_admin'] = user.is_admin
             session['email'] = email
             return redirect(url_for('dashboard'))
         else:
@@ -128,18 +123,45 @@ def login():
     else:
         return render_template('login.html')
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        name = request.form.get('name')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        hashed_password = generate_password_hash(password)
+
+        try:
+            user = User(email=email, password=hashed_password)
+            db.session.add(user)
+            db.session.commit()
+
+            employee = Employee(name=name, email=email)
+            db.session.add(employee)
+            db.session.commit()
+
+            return redirect(url_for('login'))
+        except Exception as e:
+            return jsonify({'error': 'Database insert failed', 'message': str(e)}), 500
+    else:
+        return render_template('register.html')
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    cursor = db.engine.execute("SELECT employees.name, attendance.in_time, attendance.out_time, attendance.working_hours, attendance.subject FROM employees JOIN attendance ON employees.id = attendance.employee_id")
-    attendance_records = cursor.fetchall()
-    cursor = db.engine.execute("SELECT employees.name, employees.email, employees.card_id FROM employees")
-    employees = cursor.fetchall()
-    cursor = db.engine.execute("SELECT start_time, end_time, subject FROM timetable ORDER BY start_time")
-    timetable = [{"start_time": str(row['start_time']), "end_time": str(row['end_time']), "subject": row['subject']} for row in cursor.fetchall()]
+    if session.get('is_admin'):
+        attendance_records = db.session.query(Employee.name, Attendance.in_time, Attendance.out_time, Attendance.working_hours, Attendance.subject).join(Attendance).all()
+    else:
+        attendance_records = db.session.query(Employee.name, Attendance.in_time, Attendance.out_time, Attendance.working_hours, Attendance.subject).join(Attendance).filter(Employee.email == session['email']).all()
+
+    employees = Employee.query.with_entities(Employee.name, Employee.email, Employee.card_id).all()
+    timetable = Timetable.query.order_by(Timetable.start_time).all()
+
+    timetable_data = Timetable.query.all()
+
     show_tabs = session.get('is_admin', False)
 
-    return render_template('dashboard.html', attendance_records=attendance_records, employees=employees, timetable=timetable, show_tabs=show_tabs)
+    return render_template('dashboard.html', attendance_records=attendance_records, employees=employees, timetable=timetable, show_tabs=show_tabs, timetable_data=timetable_data)
 
 @app.route('/test_db_connection')
 def test_db_connection():
