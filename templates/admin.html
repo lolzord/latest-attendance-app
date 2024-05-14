@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+</head>
+<body>
+    <h1>Admin Dashboard</h1>
+    <button onclick="loadAllEmployees();">View All Employees</button>
+    <button onclick="logout();">Logout</button>
+    <div id="employeeList"></div>
+    <script>
+        function loadAllEmployees() {
+            fetch('/api/admin/employees', {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('employeeList').innerHTML = data.map(emp => 
+                    `<div>Name: ${emp.name}, Email: ${emp.email}</div>`
+                ).join('');
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function logout() {
+            fetch('/logout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                window.location.href = '/';
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>

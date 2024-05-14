@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register Card</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            let interval = setInterval(fetchCardId, 1000); // Poll every second to update the card ID
+            function fetchCardId() {
+                $.getJSON('/capture_card', function (data) {
+                    if (data.card_id) {
+                        $('#id').val(data.card_id); // Set the card ID in the input box when received
+                        clearInterval(interval); // Optionally stop polling once a card ID is received
+                    }
+                }).fail(function (jqXHR, textStatus, errorThrown) {
+                    console.log('Failed to fetch card ID: ' + textStatus);
+                });
+            }
+        });
+    </script>
+</head>
+<body>
+    <h1>Register Card</h1>
+    <form action="/register_card" method="post">
+        <label for="email">Email:</label>
+        <select name="email" id="email">
+            <!-- The options will be filled with the emails from the server -->
+        </select><br><br>
+        <label for="id">Card ID:</label>
+        <input type="text" id="id" name="id" readonly><br><br>
+        <button type="submit">Register</button>
+    </form>
+</body>
+</html>

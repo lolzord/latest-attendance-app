@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Waiting for Scan</title>
+    <script>
+        // Periodically check if a card has been scanned by reloading the page
+        setTimeout(function(){
+            window.location.reload(1);
+        }, 5000); // Reload page every 5 seconds
+    </script>
+</head>
+<body>
+    <h1>Waiting for card to be scanned...</h1>
+</body>
+</html>

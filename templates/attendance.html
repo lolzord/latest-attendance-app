@@ -1,0 +1,63 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mark Attendance</title>
+</head>
+<body>
+    <h1>Mark Attendance</h1>
+    <form id="attendanceForm">
+        <button type="button" onclick="markAttendance()">Mark Attendance</button>
+    </form>
+
+    <script>
+        function markAttendance() {
+            fetch('http://127.0.0.1:5000/attendance', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include' // Ensures cookies (session) are sent
+            })
+            .then(response => response.json())
+            .then(data => alert(data.message))
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html> -->
+
+<!-- attendance.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Attendance System</title>
+    <script>
+        // Function to handle the card scan event
+        function handleCardScan() {
+            var card_id = document.getElementById('card_id').value;
+            if(card_id) {
+                // If a card ID is detected, submit the form
+                document.getElementById('attendance_form').submit();
+            }
+        }
+
+        // When the document is ready, focus on the input field and listen for changes
+        document.addEventListener('DOMContentLoaded', function() {
+            var cardInput = document.getElementById('card_id');
+            cardInput.focus();
+            cardInput.addEventListener('input', handleCardScan);
+        });
+    </script>
+</head>
+<body>
+    <h1>Employee Attendance</h1>
+    <form id="attendance_form" action="/record_attendance_by_card" method="get">
+        <input type="text" id="card_id" name="id" hidden />
+        <!-- The form is hidden since the RFID reader acts as a keyboard input -->
+    </form>
+</body>
+</html>
+

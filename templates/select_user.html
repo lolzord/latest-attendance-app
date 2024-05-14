@@ -1,0 +1,69 @@
+<!-- <!DOCTYPE html>
+<html>
+<head>
+    <title>Select User</title>
+</head>
+<body>
+    <h1>Select User</h1>
+    <form method="POST" action="/select_user">
+        <label for="email">Select User:</label>
+        <select name="email" id="email">
+            {% for email in emails %}
+                <option value="{{ email }}">{{ email }}</option>
+            {% endfor %}
+        </select>
+        <br>
+        <input type="submit" value="Select User">
+    </form>
+</body>
+</html> -->
+
+<!-- <!DOCTYPE html>
+<html>
+<head>
+    <title>Select User</title>
+</head>
+<body>
+    <h1>Select User</h1>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul class="flashes">
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+    <form method="POST" action="/select_user">
+        <label for="email">Select User:</label>
+        <select name="email" id="email">
+            {% for email in emails %}
+                <option value="{{ email }}">{{ email }}</option>
+            {% endfor %}
+        </select>
+        <br>
+        <input type="submit" value="Select User">
+    </form>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Select User</title>
+</head>
+<body>
+    <form method="POST">
+        <label for="email">Email:</label>
+        <select id="email" name="email">
+            {% for email in emails %}
+                <option value="{{ email }}">{{ email }}</option>
+            {% endfor %}
+        </select>
+        <label for="card_id">Card ID:</label>
+        <input type="text" id="card_id" name="card_id">
+        <input type="submit" value="Submit">
+    </form>
+</body>
+</html>

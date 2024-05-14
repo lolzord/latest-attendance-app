@@ -1,0 +1,8 @@
+<form method="post" action="{{ url_for('select_subject') }}">
+    <select name="subject">
+        {% for subject in subjects %}
+        <option value="{{ subject.id }}">{{ subject.name }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Select Subject</button>
+</form>

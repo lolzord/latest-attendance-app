@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Select User for Attendance</title>
+</head>
+<body>
+    <h1>Select User for Attendance</h1>
+    <form method="POST" action="/select_user_attendance">
+        <label for="email">Select User:</label>
+        <select name="email" id="email">
+            {% for email in emails %}
+                <option value="{{ email }}">{{ email }}</option>
+            {% endfor %}
+        </select>
+        <br>
+        <input type="submit" value="Select User">
+    </form>
+</body>
+</html>
