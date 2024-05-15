@@ -215,26 +215,11 @@ def record_attendance():  # Temporarily remove @login_required for testing
         if employee:
             current_time = datetime.now(malaysia_tz)
             
-            # Check if the employee has an open attendance record for today
-            attendance = Attendance.query.filter_by(employee_id=employee.id).filter(
-                extract('year', Attendance.in_time) == current_time.year,
-                extract('month', Attendance.in_time) == current_time.month,
-                extract('day', Attendance.in_time) == current_time.day
-            ).first()
-            if attendance:
-                # Convert in_time to timezone-aware datetime
-                if attendance.in_time.tzinfo is None:
-                    attendance.in_time = malaysia_tz.localize(attendance.in_time)
-                # Update the out_time if the attendance record exists
-                attendance.out_time = current_time
-                duration = attendance.out_time - attendance.in_time
-                attendance.working_hours = (datetime.min + duration).time()
-            else:
-                # Create a new attendance record with a default subject value
-                attendance = Attendance(employee_id=employee.id, in_time=current_time, subject="")
-                db.session.add(attendance)
-                
+            # Always create a new attendance record for each GET request
+            attendance = Attendance(employee_id=employee.id, in_time=current_time, subject="")
+            db.session.add(attendance)
             db.session.commit()
+            
             return jsonify({'message': 'Attendance recorded successfully'}), 200
         return jsonify({'error': 'Employee not found'}), 404
     except Exception as e:
