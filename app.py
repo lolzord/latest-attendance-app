@@ -131,6 +131,10 @@ def register():
         password = request.form.get('password')
         hashed_password = generate_password_hash(password)
 
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
+            return jsonify({'error': 'Email already exists'}), 400
+
         try:
             user = User(email=email, password=hashed_password)
             db.session.add(user)
@@ -145,6 +149,7 @@ def register():
             return jsonify({'error': 'Database insert failed', 'message': str(e)}), 500
     else:
         return render_template('register.html')
+
 
 @app.route('/dashboard')
 @login_required
