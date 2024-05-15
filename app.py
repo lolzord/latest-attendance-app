@@ -1,7 +1,7 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from werkzeug.security import check_password_hash, generate_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_required, logout_user, login_user
 import pytz
@@ -41,7 +41,7 @@ class Attendance(db.Model):
     employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
     in_time = db.Column(db.DateTime, nullable=False)
     out_time = db.Column(db.DateTime, nullable=True)
-    working_hours = db.Column(db.Float, nullable=True)
+    working_hours = db.Column(db.Time, nullable=True)
     subject = db.Column(db.String(120), nullable=False, default="")  # Provide a default value
     employee = db.relationship('Employee', backref=db.backref('attendances', lazy=True))
 
@@ -122,7 +122,7 @@ def login():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == 'POST':
+    if request.method == 'POST']:
         name = request.form.get('name')
         email = request.form.get('email')
         password = request.form.get('password')
@@ -227,7 +227,8 @@ def record_attendance():  # Temporarily remove @login_required for testing
                     attendance.in_time = malaysia_tz.localize(attendance.in_time)
                 # Update the out_time if the attendance record exists
                 attendance.out_time = current_time
-                attendance.working_hours = (attendance.out_time - attendance.in_time).total_seconds() / 3600.0
+                duration = attendance.out_time - attendance.in_time
+                attendance.working_hours = (datetime.min + duration).time()
             else:
                 # Create a new attendance record with a default subject value
                 attendance = Attendance(employee_id=employee.id, in_time=current_time, subject="")
