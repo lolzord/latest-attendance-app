@@ -175,6 +175,34 @@ def register_card():
     except Exception as e:
         return jsonify({'error': 'Database update failed', 'message': str(e)}), 500
 
+@app.route('/register_subject', methods=['POST'])
+@login_required
+def register_subject():
+    start_time = request.form.get('start_time')
+    end_time = request.form.get('end_time')
+    subject = request.form.get('subject')
+    
+    if not start_time or not end_time or not subject:
+        return jsonify({'error': 'Start time, end time, and subject are required'}), 400
+    
+    try:
+        timetable_entry = Timetable(start_time=start_time, end_time=end_time, subject=subject)
+        db.session.add(timetable_entry)
+        db.session.commit()
+        return redirect(url_for('dashboard'))
+    except Exception as e:
+        return jsonify({'error': 'Database insert failed', 'message': str(e)}), 500
+
+@app.route('/reset_timetable', methods=['POST'])
+@login_required
+def reset_timetable():
+    try:
+        db.session.query(Timetable).delete()
+        db.session.commit()
+        return redirect(url_for('dashboard'))
+    except Exception as e:
+        return jsonify({'error': 'Database reset failed', 'message': str(e)}), 500
+
 @app.route('/test_db_connection')
 def test_db_connection():
     try:

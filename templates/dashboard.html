@@ -154,7 +154,7 @@
     </div>
 
     <div id="RegisterSubject" class="tabcontent">
-        <form method="POST" action="/register_subject">
+        <form method="POST" action="{{ url_for('register_subject') }}">
             <label for="start_time">Start Time:</label><br>
             <input type="time" id="start_time" name="start_time"><br>
             <label for="end_time">End Time:</label><br>
@@ -163,7 +163,7 @@
             <input type="text" id="subject" name="subject"><br>
             <input type="submit" value="Register Subject">
         </form>
-        <form action="/reset_timetable" method="post">
+        <form action="{{ url_for('reset_timetable') }}" method="post">
             <button type="submit">Reset Timetable</button>
         </form>
         <table>
@@ -181,6 +181,7 @@
             {% endfor %}
         </table>
     </div>
+    
 
     <script>
         function openTab(evt, tabName) {
