@@ -7,6 +7,7 @@ from flask_login import LoginManager, UserMixin, login_required, logout_user, lo
 import pytz
 from dotenv import load_dotenv
 from flask_migrate import Migrate
+from sqlalchemy import extract
 
 # Load environment variables from .env file
 load_dotenv()
@@ -216,7 +217,7 @@ def record_attendance():  # Temporarily remove @login_required for testing
             current_time = datetime.now(malaysia_tz)
             
             # Check if the employee has an open attendance record for today
-            attendance = Attendance.query.filter_by(employee_id=employee.id).filter(db.func.date(Attendance.in_time) == date.today()).first()
+            attendance = Attendance.query.filter_by(employee_id=employee.id).filter(extract('year', Attendance.in_time) == current_time.year).filter(extract('month', Attendance.in_time) == current_time.month).filter(extract('day', Attendance.in_time) == current_time.day).first()
             if attendance:
                 # Update the out_time if the attendance record exists
                 attendance.out_time = current_time
