@@ -7,7 +7,7 @@ from flask_login import LoginManager, UserMixin, login_required, logout_user, lo
 import pytz
 from dotenv import load_dotenv
 from flask_migrate import Migrate
-from sqlalchemy import extract
+from sqlalchemy import extract, and_
 
 # Load environment variables from .env file
 load_dotenv()
@@ -215,11 +215,20 @@ def record_attendance():  # Temporarily remove @login_required for testing
         if employee:
             current_time = datetime.now(malaysia_tz)
             
-            # Always create a new attendance record for each GET request
-            attendance = Attendance(employee_id=employee.id, in_time=current_time, subject="")
-            db.session.add(attendance)
+            # Check if the employee has an open attendance record (in_time is set but out_time is null)
+            attendance = Attendance.query.filter(and_(Attendance.employee_id == employee.id, 
+                                                     Attendance.out_time == None)).order_by(Attendance.in_time.desc()).first()
+            if attendance:
+                # Update the out_time and working_hours
+                attendance.out_time = current_time
+                duration = attendance.out_time - attendance.in_time
+                attendance.working_hours = (datetime.min + duration).time()
+            else:
+                # Create a new attendance record with the current in_time
+                attendance = Attendance(employee_id=employee.id, in_time=current_time, subject="")
+                db.session.add(attendance)
+                
             db.session.commit()
-            
             return jsonify({'message': 'Attendance recorded successfully'}), 200
         return jsonify({'error': 'Employee not found'}), 404
     except Exception as e:
