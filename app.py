@@ -43,7 +43,7 @@ class Attendance(db.Model):
     in_time = db.Column(db.DateTime, nullable=False)
     out_time = db.Column(db.DateTime, nullable=True)
     working_hours = db.Column(db.Float, nullable=True)
-    subject = db.Column(db.String(120), nullable=True)
+    subject = db.Column(db.String(120), nullable=False, default="")  # Provide a default value
     employee = db.relationship('Employee', backref=db.backref('attendances', lazy=True))
 
 class Timetable(db.Model):
@@ -104,7 +104,7 @@ def select_user():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
+    if request.method == 'POST'):
         email = request.form.get('email')
         password = request.form.get('password')
 
@@ -223,8 +223,8 @@ def record_attendance():  # Temporarily remove @login_required for testing
                 attendance.out_time = current_time
                 attendance.working_hours = (attendance.out_time - attendance.in_time).total_seconds() / 3600.0
             else:
-                # Create a new attendance record
-                attendance = Attendance(employee_id=employee.id, in_time=current_time)
+                # Create a new attendance record with a default subject value
+                attendance = Attendance(employee_id=employee.id, in_time=current_time, subject="")
                 db.session.add(attendance)
                 
             db.session.commit()
