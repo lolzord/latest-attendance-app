@@ -1,7 +1,7 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from werkzeug.security import check_password_hash, generate_password_hash
-from datetime import datetime
+from datetime import datetime, date
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_required, logout_user, login_user
 import pytz
@@ -217,7 +217,7 @@ def record_attendance():
             current_time = datetime.now(malaysia_tz)
             
             # Check if the employee has an open attendance record for today
-            attendance = Attendance.query.filter_by(employee_id=employee.id, in_time=current_time.date()).first()
+            attendance = Attendance.query.filter_by(employee_id=employee.id).filter(db.func.date(Attendance.in_time) == date.today()).first()
             if attendance:
                 # Update the out_time if the attendance record exists
                 attendance.out_time = current_time
