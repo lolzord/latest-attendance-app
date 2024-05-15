@@ -28,6 +28,7 @@ malaysia_time = datetime.now(malaysia_tz)
 selected_email = None
 
 class User(UserMixin, db.Model):
+    __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
@@ -131,10 +132,6 @@ def register():
         password = request.form.get('password')
         hashed_password = generate_password_hash(password)
 
-        existing_user = User.query.filter_by(email=email).first()
-        if existing_user:
-            return jsonify({'error': 'Email already exists'}), 400
-
         try:
             user = User(email=email, password=hashed_password)
             db.session.add(user)
@@ -149,7 +146,6 @@ def register():
             return jsonify({'error': 'Database insert failed', 'message': str(e)}), 500
     else:
         return render_template('register.html')
-
 
 @app.route('/dashboard')
 @login_required
