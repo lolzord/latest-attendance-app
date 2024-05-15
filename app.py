@@ -35,14 +35,16 @@ class User(UserMixin, db.Model):
     is_admin = db.Column(db.Boolean, default=False)
 
 class Employee(db.Model):
+    __tablename__ = 'employees'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     card_id = db.Column(db.String(120), unique=True, nullable=True)
+    is_admin = db.Column(db.Boolean, default=False)
 
 class Attendance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    employee_id = db.Column(db.Integer, db.ForeignKey('employee.id'), nullable=False)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
     in_time = db.Column(db.DateTime, nullable=False)
     out_time = db.Column(db.DateTime, nullable=True)
     working_hours = db.Column(db.Float, nullable=True)
