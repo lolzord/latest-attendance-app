@@ -203,6 +203,36 @@ def reset_timetable():
     except Exception as e:
         return jsonify({'error': 'Database reset failed', 'message': str(e)}), 500
 
+@app.route('/record_attendance', methods=['GET'])
+@login_required
+def record_attendance():
+    card_id = request.args.get('id')
+    
+    if not card_id:
+        return jsonify({'error': 'Card ID is required'}), 400
+    
+    try:
+        employee = Employee.query.filter_by(card_id=card_id).first()
+        if employee:
+            current_time = datetime.now(malaysia_tz)
+            
+            # Check if the employee has an open attendance record for today
+            attendance = Attendance.query.filter_by(employee_id=employee.id, in_time=current_time.date()).first()
+            if attendance:
+                # Update the out_time if the attendance record exists
+                attendance.out_time = current_time
+                attendance.working_hours = (attendance.out_time - attendance.in_time).total_seconds() / 3600.0
+            else:
+                # Create a new attendance record
+                attendance = Attendance(employee_id=employee.id, in_time=current_time)
+                db.session.add(attendance)
+                
+            db.session.commit()
+            return jsonify({'message': 'Attendance recorded successfully'}), 200
+        return jsonify({'error': 'Employee not found'}), 404
+    except Exception as e:
+        return jsonify({'error': 'Database operation failed', 'message': str(e)}), 500
+
 @app.route('/test_db_connection')
 def test_db_connection():
     try:
