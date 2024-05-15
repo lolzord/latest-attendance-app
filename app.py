@@ -214,7 +214,17 @@ def record_attendance():  # Temporarily remove @login_required for testing
         employee = Employee.query.filter_by(card_id=card_id).first()
         if employee:
             current_time = datetime.now(malaysia_tz)
+
+            # Retrieve the current subject based on the current time
+            timetable_entry = Timetable.query.filter(
+                and_(
+                    Timetable.start_time <= current_time.time(),
+                    Timetable.end_time >= current_time.time()
+                )
+            ).first()
             
+            subject = timetable_entry.subject if timetable_entry else ""
+
             # Check if the employee has an open attendance record (in_time is set but out_time is null)
             attendance = Attendance.query.filter(and_(Attendance.employee_id == employee.id, 
                                                      Attendance.out_time == None)).order_by(Attendance.in_time.desc()).first()
@@ -227,8 +237,8 @@ def record_attendance():  # Temporarily remove @login_required for testing
                 duration = attendance.out_time - attendance.in_time
                 attendance.working_hours = (datetime.min + duration).time()
             else:
-                # Create a new attendance record with the current in_time
-                attendance = Attendance(employee_id=employee.id, in_time=current_time, subject="")
+                # Create a new attendance record with the current in_time and subject
+                attendance = Attendance(employee_id=employee.id, in_time=current_time, subject=subject)
                 db.session.add(attendance)
                 
             db.session.commit()
