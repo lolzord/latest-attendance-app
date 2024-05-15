@@ -219,6 +219,9 @@ def record_attendance():  # Temporarily remove @login_required for testing
             attendance = Attendance.query.filter(and_(Attendance.employee_id == employee.id, 
                                                      Attendance.out_time == None)).order_by(Attendance.in_time.desc()).first()
             if attendance:
+                # Ensure in_time is timezone-aware
+                if attendance.in_time.tzinfo is None:
+                    attendance.in_time = malaysia_tz.localize(attendance.in_time)
                 # Update the out_time and working_hours
                 attendance.out_time = current_time
                 duration = attendance.out_time - attendance.in_time
