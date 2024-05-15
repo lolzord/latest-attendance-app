@@ -27,19 +27,14 @@ malaysia_time = datetime.now(malaysia_tz)
 
 selected_email = None
 
-class User(UserMixin, db.Model):
-    __tablename__ = 'user'
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
-    is_admin = db.Column(db.Boolean, default=False)
-
-class Employee(db.Model):
+class Employee(UserMixin, db.Model):  # Use Employee for UserMixin to integrate with Flask-Login
     __tablename__ = 'employees'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
     card_id = db.Column(db.String(120), unique=True, nullable=True)
+    is_admin = db.Column(db.Boolean, default=False)
 
 class Attendance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -67,7 +62,7 @@ def logout():
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return Employee.query.get(int(user_id))
 
 @app.route('/capture_card')
 def capture_card():
@@ -112,12 +107,12 @@ def login():
         email = request.form.get('email')
         password = request.form.get('password')
 
-        user = User.query.filter_by(email=email).first()
+        employee = Employee.query.filter_by(email=email).first()
 
-        if user and check_password_hash(user.password, password):
-            login_user(user)
+        if employee and check_password_hash(employee.password, password):
+            login_user(employee)
             session['logged_in'] = True
-            session['is_admin'] = user.is_admin
+            session['is_admin'] = employee.is_admin
             session['email'] = email
             return redirect(url_for('dashboard'))
         else:
@@ -134,11 +129,7 @@ def register():
         hashed_password = generate_password_hash(password)
 
         try:
-            user = User(email=email, password=hashed_password)
-            db.session.add(user)
-            db.session.commit()
-
-            employee = Employee(name=name, email=email)
+            employee = Employee(name=name, email=email, password=hashed_password, is_admin=False)
             db.session.add(employee)
             db.session.commit()
 
@@ -152,16 +143,16 @@ def register():
 @login_required
 def dashboard():
     print("Session values:", session)
-    if session.get('is_admin'):
+    employee = Employee.query.filter_by(email=session['email']).first()
+    if employee and employee.is_admin:
+        show_tabs = True
         attendance_records = db.session.query(Employee.name, Attendance.in_time, Attendance.out_time, Attendance.working_hours, Attendance.subject).join(Attendance).all()
     else:
+        show_tabs = False
         attendance_records = db.session.query(Employee.name, Attendance.in_time, Attendance.out_time, Attendance.working_hours, Attendance.subject).join(Attendance).filter(Employee.email == session['email']).all()
 
     employees = Employee.query.with_entities(Employee.name, Employee.email, Employee.card_id).all()
     timetable = Timetable.query.order_by(Timetable.start_time).all()
-
-    show_tabs = session.get('is_admin', False)
-    print("show_tabs value:", show_tabs)
 
     return render_template('dashboard.html', attendance_records=attendance_records, employees=employees, timetable=timetable, show_tabs=show_tabs)
 
