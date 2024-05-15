@@ -105,7 +105,7 @@
                     <td>{{ record[1] }}</td>
                     <td>{{ record[2] }}</td>
                     <td>
-                        <form action="/register_card" method="post">
+                        <form action="{{ url_for('register_card') }}" method="post">
                             <input type="hidden" name="email" value="{{ record[1] }}">
                             <input type="text" name="card_id" placeholder="Enter Card ID">
                             <input type="submit" value="Register Card">
@@ -116,6 +116,7 @@
             </tbody>
         </table>
     </div>
+    
 
     <div id="Attendance" class="tabcontent">
         <h3>Attendance</h3>

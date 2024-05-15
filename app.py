@@ -156,6 +156,25 @@ def dashboard():
 
     return render_template('dashboard.html', attendance_records=attendance_records, employees=employees, timetable=timetable, show_tabs=show_tabs)
 
+@app.route('/register_card', methods=['POST'])
+@login_required
+def register_card():
+    email = request.form.get('email')
+    card_id = request.form.get('card_id')
+    
+    if not email or not card_id:
+        return jsonify({'error': 'Email and card ID are required'}), 400
+    
+    try:
+        employee = Employee.query.filter_by(email=email).first()
+        if employee:
+            employee.card_id = card_id
+            db.session.commit()
+            return redirect(url_for('dashboard'))
+        return jsonify({'error': 'Employee not found'}), 404
+    except Exception as e:
+        return jsonify({'error': 'Database update failed', 'message': str(e)}), 500
+
 @app.route('/test_db_connection')
 def test_db_connection():
     try:
