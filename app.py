@@ -24,7 +24,6 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 malaysia_tz = pytz.timezone('Asia/Kuala_Lumpur')
-malaysia_time = datetime.now(malaysia_tz)
 
 selected_email = None
 
@@ -216,8 +215,12 @@ def record_attendance():  # Temporarily remove @login_required for testing
         if employee:
             current_time = datetime.now(malaysia_tz)
             
-            # Check if the employee has an open attendance record for today
-            attendance = Attendance.query.filter_by(employee_id=employee.id).filter(extract('year', Attendance.in_time) == current_time.year).filter(extract('month', Attendance.in_time) == current_time.month).filter(extract('day', Attendance.in_time) == current_time.day).first()
+            # Ensure that in_time is timezone-aware
+            attendance = Attendance.query.filter_by(employee_id=employee.id).filter(
+                extract('year', Attendance.in_time) == current_time.year,
+                extract('month', Attendance.in_time) == current_time.month,
+                extract('day', Attendance.in_time) == current_time.day
+            ).first()
             if attendance:
                 # Update the out_time if the attendance record exists
                 attendance.out_time = current_time
