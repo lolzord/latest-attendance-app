@@ -204,8 +204,7 @@ def reset_timetable():
         return jsonify({'error': 'Database reset failed', 'message': str(e)}), 500
 
 @app.route('/record_attendance', methods=['GET'])
-@login_required
-def record_attendance():
+def record_attendance():  # Temporarily remove @login_required for testing
     card_id = request.args.get('id')
     
     if not card_id:
