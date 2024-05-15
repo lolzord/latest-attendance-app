@@ -39,6 +39,7 @@ class Employee(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
     card_id = db.Column(db.String(120), unique=True, nullable=True)
     is_admin = db.Column(db.Boolean, default=False)
 
@@ -139,7 +140,7 @@ def register():
             db.session.add(user)
             db.session.commit()
 
-            employee = Employee(name=name, email=email)
+            employee = Employee(name=name, email=email, password=hashed_password)
             db.session.add(employee)
             db.session.commit()
 
